@@ -79,10 +79,11 @@ LockscreenOverlay &LockscreenOverlay::instance()
     return overlay;
 }
 
-LockscreenOverlay::~LockscreenOverlay()
+void LockscreenOverlay::release()
 {
     if (m_overlay) {
         kde_lockscreen_overlay_v1_destroy(m_overlay);
+        m_overlay = nullptr;
     }
 }
 
@@ -126,6 +127,13 @@ void LockscreenOverlay::resolve()
             // to send requests from the main thread afterwards.
             wl_proxy_set_queue(reinterpret_cast<wl_proxy *>(bound), nullptr);
             m_overlay = bound;
+            // The proxy belongs to Qt's display, which QGuiApplication tears
+            // down before any static destructor runs. aboutToQuit is emitted
+            // during exec() teardown, the last moment the connection - and
+            // therefore the proxy - is still valid.
+            QObject::connect(qGuiApp, &QCoreApplication::aboutToQuit, qGuiApp, [this] {
+                release();
+            });
         }
     } else {
         m_reason = QStringLiteral("the compositor does not offer kde_lockscreen_overlay_v1");

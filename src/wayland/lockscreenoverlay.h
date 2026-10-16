@@ -42,11 +42,11 @@ public:
 
 private:
     LockscreenOverlay() = default;
-    ~LockscreenOverlay();
     LockscreenOverlay(const LockscreenOverlay &) = delete;
     LockscreenOverlay &operator=(const LockscreenOverlay &) = delete;
 
     void resolve();
+    void release();
 
     bool m_resolved = false;
     QString m_reason;
